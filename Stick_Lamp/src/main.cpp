@@ -1,27 +1,34 @@
 #define PIN D7
 #define NUM_LEDS 64
 
-#define AP_SSID "WikiLink-AC3D"
-#define AP_PASS "f15cbb4e"
+//#define AP_SSID "WikiLink-AC3D"
+//#define AP_PASS "f15cbb4e"
 
+#define AP_SSID "iPhone (Андрей)"
+#define AP_PASS "refobu8895"
+
+#include <iostream>
 #include <GyverHub.h>
 #include "Adafruit_NeoPixel.h"
 #include "Color_set.h"
+#include <Pairs.h>
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 GyverHub hub("MyDevice", "ESP8266", ""); // имя сети, имя устройства, иконка
 
 int Click_Pwr_btn;
 int Power_Status;
-
-int Color_count; // Текстовая переменная для выбора элемента массива
+Pairs Brightness_data;
+int Color_count = 0; // Текстовая переменная для выбора элемента массива
 bool flag = 0;   // Переменная обработка флага прерывания
-
+int Brightness = 125;
 void fill_start()
 {
+  strip.setBrightness(Brightness);
   strip.clear();
   for (int a = 0; a < NUM_LEDS; a++)
   {
+    
     strip.setPixelColor(a, colors[Color_count]);
     strip.show();
     delay(10);
@@ -59,6 +66,57 @@ void power_off()
   }
 }
 
+void back_color()
+{
+  if (Color_count == 0)
+  {
+    fill_start();
+  }
+  else
+  {
+    Color_count = Color_count - 1;
+    fill_start();
+  }
+}
+
+void next_color()
+{
+  if (Color_count == 10)
+  {
+    fill_start();
+  }
+  else
+  {
+    Color_count = Color_count + 1;
+    fill_start();
+  }
+}
+
+void Br_down()
+{
+  if (Brightness == 0)
+  {
+    fill_start();
+  }
+  else
+  {
+    Brightness = Brightness - 10;
+    fill_start();
+  }
+}
+
+void Br_up()
+{
+  if (Brightness == 250)
+  {
+    fill_start();
+  }
+  else
+  {
+    Brightness = Brightness + 10;
+    fill_start();
+  }
+}
 
 // билдер
 void build(gh::Builder &b)
@@ -69,8 +127,16 @@ void build(gh::Builder &b)
   b.Button_("PowerOff").icon("f011").color(gh::Colors::Red).attach(power_off);
   b.endRow();
 
+  b.Title("Brithness Set");
   b.beginRow();
-  b.Slider().color(gh::Colors::Green);
+  b.Button_("Br_down").icon("f137").color(gh::Colors::Yellow).attach(Br_down);
+  b.Button_("Br_up").icon("f138").color(gh::Colors::Yellow).attach(Br_up); 
+  b.endRow();
+
+  b.Title("Color Set");
+  b.beginRow();
+  b.Button_("Color_Back").icon("f053").color(gh::Colors::Blue).attach(back_color);
+  b.Button_("Color_Next").icon("f054").color(gh::Colors::Blue).attach(next_color);
   b.endRow();
 }
 
@@ -89,7 +155,7 @@ void setup()
   Serial.println(WiFi.localIP());
 
   strip.begin();
-  strip.setBrightness(250);
+  
 
   hub.config(F("MyDevices"), F("Stick_Lapm_1"), F(""));
   hub.onBuild(build); // подключаем билдер
@@ -100,7 +166,6 @@ void setup()
 void loop()
 {
   hub.tick();
-  Color_count = 1;
 
   if (flag == 0)
   {
